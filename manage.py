@@ -1,11 +1,11 @@
 from flask import session
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
-from info import creat_app, db
+from info import create_app, db
 
 # 通过指定的配置名字创建对应配置的app
 # creat_app 就类似于工厂方法
-app = creat_app("development")
+app = create_app("development")
 
 manager = Manager(app)
 # 将app与db关联

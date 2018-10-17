@@ -11,7 +11,7 @@ from config import config
 db = SQLAlchemy()
 
 
-def creat_app(config_name):
+def create_app(config_name):
     app = Flask(__name__)
     # 添加配置
     app.config.from_object(config[config_name])
