@@ -4,6 +4,7 @@ from flask import current_app
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from info import create_app, db
+from info import models, constants
 
 # 通过指定的配置名字创建对应配置的app
 # creat_app 就类似于工厂方法
