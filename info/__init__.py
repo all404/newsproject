@@ -8,11 +8,14 @@ from flask_wtf import CSRFProtect
 from redis import StrictRedis
 
 from config import config
-from info.modules.index import index_blu
 
 # 初始化数据库
 # 在flask很多扩展里面都可以初始化扩展的对象,然后在调用init_app方法初始化
 db = SQLAlchemy()
+
+# 定义redis_store时,添加类型表示,使在使用redis_store.时有智能提示
+redis_store = None  # type: StrictRedis
+# redis_store: StrictRedis = None
 
 
 def setup_log(config_name):
@@ -39,6 +42,7 @@ def create_app(config_name):
     # 初始化数据库
     db.init_app(app)
     # 初始化redis存储对象
+    global redis_store
     redis_store = StrictRedis(host=config[config_name].REDIS_HOST, port=config[config_name].REDIS_PORT)
     # 开启当前项目 CSRF 保护,只做服务器验证功能
     CSRFProtect(app)
@@ -46,6 +50,7 @@ def create_app(config_name):
     Session(app)
 
     # 注册蓝图
+    from info.modules.index import index_blu
     app.register_blueprint(index_blu)
 
     return app
