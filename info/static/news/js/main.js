@@ -160,7 +160,7 @@ $(function(){
             success: function (resp) {
                 if (resp.errno == "0"){
                     // 表示注册成功
-                    lacation.reload()
+                    location.reload()
                     alert(resp.errmsg)
                 }else {
                     // 表示注册失败

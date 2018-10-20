@@ -50,7 +50,7 @@ def register():
     user = User()
     user.mobile = mobile
     user.nick_name = mobile
-    user.password_hash = password
+    user.password = password
 
     # 6.将User模型添加到数据库
     try:
