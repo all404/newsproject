@@ -180,6 +180,44 @@ function sendSMSCode() {
     }
 
     // TODO 发送短信验证码
+    // 准备数据
+    var params = {
+        "mobile": mobile,
+        "imageCode": imageCode,
+        "imageCodeId": imageCodeId
+    }
+    //发送ajax请求
+    $.ajax({
+        url: "/passport/sms_code",
+        type: "post",
+        data: JSON.stringify(params),
+        contentType: "application/json",
+        success: function (resp) {
+            if (resp.errno == "0"){
+                // 表示发送成功
+                var num = 60;
+                var t = setInterval(function () {
+                    if (num == 1){
+                        // 倒计时结束
+                        clearInterval(t);
+                        // 设置显示内容
+                        $(".get_code").html("点击获取验证码");
+                        // 添加点击事件
+						$(".get_code").attr("onclick", "sendSMSCode();");
+                    }else {
+                        num -= 1;
+                        $(".get_code").html(num + "秒");
+                    }
+                }, 1000)
+
+            }else {
+                // 表示发送失败
+                alert(resp.errmsg);
+                $(".get_code").html("点击获取验证码");
+                $(".get_code").attr("onclick", "sendSMSCode();")
+            }
+        }
+    })
 }
 
 // 调用该函数模拟点击左侧按钮

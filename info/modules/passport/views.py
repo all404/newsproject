@@ -1,9 +1,73 @@
+import random
+import re
+
 from flask import request, current_app, abort, make_response, jsonify
 
 from info import redis_store, constants
+from info.libs.yuntongxun.sms import CCP
 from info.utils.captcha.captcha import captcha
 from info.utils.captcha.fonts.response_code import RET
 from . import passport_blu
+
+
+@passport_blu.route('/sms_code', methods=['POST'])
+def get_sms_code():
+    """
+    短信验证码
+    1.获取参数: 手机号,图片验证码内容,图片验证码编号(随机值)
+    2.校验参数(是否有值,参数是否符合规则)
+    3.先从redis取出真实图片验证码内容
+    4.与用户验证码内容进行对比,若不一致,返回错误信息
+    5.如果一致,生成短信验证码内容
+    6.发送短信验证码&保存短信验证码到redis
+    7.告知发送结果
+    :return:
+    """
+    # 1.获取参数: 手机号,图片验证码内容,图片验证码编号(随机值)
+    params_dict = request.json  # 或者json.loads(requset.data)
+    mobile = params_dict['mobile']
+    image_code = params_dict['imageCode']
+    image_code_id = params_dict['imageCodeId']
+
+    # 2.校验参数(是否有值,参数是否符合规则)
+    if not all([mobile, image_code, image_code_id]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+    if not re.match('1[35678]\\d{9}', mobile):
+        return jsonify(errno=RET.PARAMERR, errmsg="手机号格式错误")
+
+    # 3.先从redis取出真实图片验证码内容
+    try:  # 默认从redis中取出的验证码时字节型,要取出字符串型,需要在redis中配置 decode_responses=True
+        real_image_code = redis_store.get("ImageCodeId_" + image_code_id)
+    except Exception as e:
+        current_app.logger.error(e)
+    if not real_image_code:
+        return jsonify(errno=RET.NODATA, errmsg="验证码过期")
+
+    # 4.与用户验证码内容进行对比,若不一致,返回错误信息
+    if real_image_code.upper() != image_code.upper():
+        return jsonify(errno=RET.PARAMERR, errmsg="验证码输入错误")
+
+    # 5.如果一致,生成短信验证码内容
+    sms_code_str = "%06d" % random.randint(0, 999999)
+    current_app.logger.debug("短信验证码内容:", sms_code_str)
+
+    # 6.发送短信验证码
+    result = CCP().send_template_sms(mobile, [sms_code_str, constants.SMS_CODE_REDIS_EXPIRES / 5], 1)
+    if result != 0:
+        return jsonify(errno=RET.DATAERR, errmsg="短信发送失败")
+    # 保存短信验证码到redis
+    try:
+        redis_store.set("SMS_" + mobile, sms_code_str, ex=constants.SMS_CODE_REDIS_EXPIRES)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="数据保存失败")
+
+    # 7.告知发送结果
+    return jsonify(errno=RET.OK, errmsg="发送成功")
+
+
+
+
 
 
 # 注册蓝图路由
