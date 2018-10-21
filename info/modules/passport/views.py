@@ -12,6 +12,20 @@ from info.utils.captcha.fonts.response_code import RET
 from . import passport_blu
 
 
+@passport_blu.route('/logout')
+def logout():
+    """
+    退出登录
+    :return:
+    """
+    # pop 是移出session中的数据(dict)
+    session.pop("user_id", None)
+    session.pop("mobile", None)
+    session.pop("nick_name", None)
+
+    return jsonify(errno=RET.OK, errmsg="退出成功")
+
+
 @passport_blu.route('/login', methods=["POST"])
 def login():
     """
